@@ -1,0 +1,4 @@
+
+<resources>
+    <style name="Theme.SplitPaisa" parent="Theme.Material3.Light.NoActionBar" />
+</resources>
