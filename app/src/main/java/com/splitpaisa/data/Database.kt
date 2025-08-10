@@ -7,7 +7,8 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities=[Member::class, Party::class, PartyMember::class, Account::class, TxnEntity::class, Posting::class, CategoryBudget::class],
-    version=1
+    version=1,
+    exportSchema=false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun memberDao(): MemberDao

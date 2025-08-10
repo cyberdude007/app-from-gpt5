@@ -11,7 +11,11 @@ data class Member(@PrimaryKey(autoGenerate = true) val id: Int = 0, val name: St
 @Entity(tableName = "parties")
 data class Party(@PrimaryKey(autoGenerate = true) val id: Int = 0, val name: String)
 
-@Entity(primaryKeys = ["partyId","memberId"], indices=[Index("partyId"),Index("memberId")])
+@Entity(
+    tableName = "party_members",
+    primaryKeys = ["partyId","memberId"],
+    indices=[Index("partyId"),Index("memberId")]
+)
 data class PartyMember(val partyId: Int, val memberId: Int)
 
 @Entity(tableName = "accounts")
@@ -30,6 +34,7 @@ data class TxnEntity(
 )
 
 @Entity(
+    tableName = "postings",
     foreignKeys=[ForeignKey(entity=TxnEntity::class, parentColumns=["id"], childColumns=["txnId"], onDelete=ForeignKey.CASCADE)],
     indices=[Index("txnId")]
 )
