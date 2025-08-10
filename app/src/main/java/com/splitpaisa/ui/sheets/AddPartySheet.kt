@@ -1,6 +1,10 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.splitpaisa.ui.sheets
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -23,8 +27,8 @@ fun AddPartySheet(
                 OutlinedTextField(value = member, onValueChange = { member = it }, label = { Text("Add member") }, modifier = Modifier.weight(1f))
                 Button(onClick = { if (member.isNotBlank()) { members.add(member); member = "" } }) { Text("Add") }
             }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                members.forEach { m -> AssistChip(onClick = {}, label = { Text(m) }) }
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(members) { m -> AssistChip(onClick = {}, label = { Text(m) }) }
             }
             Spacer(Modifier.height(8.dp))
             Button(
