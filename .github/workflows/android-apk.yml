@@ -51,8 +51,7 @@ jobs:
 
       - name: List APKs
         run: |
-          find "${{ steps.gw.outputs.dir }}" -type f -path "*/app/build/outputs/apk/**/*" -maxdepth 6 -printf "%p
-" || true
+          find "${{ steps.gw.outputs.dir }}" -type f -path "*/app/build/outputs/apk/**/*" -maxdepth 6 -printf "%p" || true
 
       - name: Prepare artifact
         shell: bash
