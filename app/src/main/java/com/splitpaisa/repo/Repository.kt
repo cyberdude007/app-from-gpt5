@@ -3,16 +3,21 @@ package com.splitpaisa.repo
 import android.content.Context
 import com.splitpaisa.model.*
 import com.splitpaisa.storage.*
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.util.UUID
 
 class DefaultRepository private constructor(
     private val db: AppDatabase
 ) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    init {
+        scope.launch { seedIfEmpty() }
+    }
+
     val peopleFlow: Flow<List<Person>> =
         db.personDao().getAll().map { list -> list.map { it.toModel() } }
 
@@ -64,6 +69,42 @@ class DefaultRepository private constructor(
             }
             totals
         }
+
+    private suspend fun seedIfEmpty() {
+        if (db.personDao().count() > 0) return
+        val persons = listOf("Aarav","Meera","Rohit","Isha","Kabir","Nisha","Dev","Anika")
+            .map { PersonEntity(id = UUID.randomUUID().toString(), name = it) }
+        db.personDao().upsertAll(persons)
+
+        val memberIds = persons.take(4).map { it.id }
+        val party = PartyEntity(
+            id = UUID.randomUUID().toString(),
+            name = "Weekend Trip",
+            memberIdsCsv = memberIds.joinToString(",")
+        )
+        db.partyDao().upsert(party)
+
+        val hotel = ExpenseEntity(
+            id = UUID.randomUUID().toString(),
+            partyId = party.id,
+            amount = 1200.0,
+            description = "Hotel",
+            payerId = memberIds.first(),
+            participantIdsCsv = memberIds.joinToString(","),
+            dateEpochDay = LocalDate.now().toEpochDay()
+        )
+        val dinner = ExpenseEntity(
+            id = UUID.randomUUID().toString(),
+            partyId = party.id,
+            amount = 600.0,
+            description = "Dinner",
+            payerId = memberIds[1],
+            participantIdsCsv = memberIds.joinToString(","),
+            dateEpochDay = LocalDate.now().toEpochDay()
+        )
+        db.expenseDao().insert(hotel)
+        db.expenseDao().insert(dinner)
+    }
 
     companion object {
         @Volatile private var INSTANCE: DefaultRepository? = null
