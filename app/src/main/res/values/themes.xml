@@ -1,4 +1,7 @@
-
 <resources>
-    <style name="Theme.SplitPaisa" parent="Theme.Material3.DayNight.NoActionBar" />
+    <style name="Theme.SplitPaisa" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/pf_teal</item>
+        <item name="colorSecondary">@color/pf_lime</item>
+        <item name="colorTertiary">@color/pf_gold</item>
+    </style>
 </resources>
