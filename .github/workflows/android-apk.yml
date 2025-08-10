@@ -1,4 +1,4 @@
-name: Android Debug APK (auto-generate wrapper)
+name: Android Debug APK (bootstrap Gradle 8.11.1)
 
 on:
   push:
@@ -43,63 +43,22 @@ jobs:
           echo "project_dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
           echo "Detected project dir: $PROJECT_DIR"
 
-      - name: Ensure Gradle wrapper (generate if missing)
-        id: wrapper_gen
-        working-directory: ${{ steps.detect.outputs.project_dir }}
+      - name: Download Gradle 8.11.1
+        id: gradle_dl
         shell: bash
         run: |
           set -euo pipefail
-          if [ -f "./gradlew" ]; then
-            echo "Wrapper already exists."
-            echo "wrapper=./gradlew" >> "$GITHUB_OUTPUT"
-            chmod +x ./gradlew
-            exit 0
-          fi
-
-          echo "No wrapper found. Detecting AGP version to pick a compatible Gradle..."
-          # Look for both Groovy and Kotlin DSL plugin declarations and classpath
-          AGP=$(grep -RhoE "com\.android\.tools\.build:gradle:[0-9.]+" . | sed -E 's/.*gradle:([0-9.]+).*/\1/' | head -n 1 || true)
-          if [ -z "${AGP:-}" ]; then
-            AGP=$(grep -RhoE "id\s*\(\s*['\"]com\.android\.(application|library)['\"]\s*\)\s*version\s*['\"][0-9.]+['\"]" . \
-                  | sed -E "s/.*version\s*['\"]([0-9.]+)['\"].*/\1/" | head -n 1 || true)
-          fi
-
-          echo "Detected AGP: ${AGP:-unknown}"
-
-          # Map AGP -> Gradle (conservative mapping)
-          GV="8.7"
-          case "${AGP:-}" in
-            8.6* ) GV="8.7" ;;
-            8.5* ) GV="8.7" ;;
-            8.4* ) GV="8.6" ;;
-            8.3* ) GV="8.4" ;;
-            8.2* ) GV="8.2" ;;
-            8.1* ) GV="8.0" ;;
-            8.0* ) GV="8.0" ;;
-            7.4* ) GV="7.5.1" ;;
-            7.3* ) GV="7.4.2" ;;
-            7.2* ) GV="7.3.3" ;;
-            7.1* ) GV="7.2" ;;
-            7.0* ) GV="7.0.2" ;;
-            4.2* ) GV="6.7.1" ;;
-          esac
-          echo "Using Gradle $GV"
-
+          GV="8.11.1"
           URL="https://services.gradle.org/distributions/gradle-${GV}-bin.zip"
           echo "Downloading $URL"
           curl -sSL "$URL" -o gradle.zip
           unzip -q gradle.zip -d "$RUNNER_TEMP/gradle"
-          GRADLE_HOME="$RUNNER_TEMP/gradle/gradle-$GV"
-          "$GRADLE_HOME/bin/gradle" --version
+          echo "gradle_home=$RUNNER_TEMP/gradle/gradle-$GV" >> "$GITHUB_OUTPUT"
+          "$RUNNER_TEMP/gradle/gradle-$GV/bin/gradle" --version
 
-          echo "Generating wrapper at $(pwd) with Gradle $GV"
-          "$GRADLE_HOME/bin/gradle" wrapper --gradle-version "$GV"
-          chmod +x ./gradlew
-          echo "wrapper=./gradlew" >> "$GITHUB_OUTPUT"
-
-      - name: Assemble Debug APK
+      - name: Assemble Debug APK (no wrapper)
         working-directory: ${{ steps.detect.outputs.project_dir }}
-        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+        run: ${{ steps.gradle_dl.outputs.gradle_home }}/bin/gradle :app:assembleDebug --no-daemon --stacktrace
 
       - name: Prepare artifact
         working-directory: ${{ steps.detect.outputs.project_dir }}
