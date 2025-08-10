@@ -8,13 +8,10 @@ interface PartyDao {
     @Query("SELECT * FROM parties ORDER BY createdAt DESC")
     fun getParties(): Flow<List<Party>>
 
-    @Insert
-    suspend fun insertParty(party: Party): Long
+    @Insert suspend fun insertParty(party: Party): Long
+    @Insert suspend fun insertPeople(people: List<Person>)
 
-    @Insert
-    suspend fun insertPeople(people: List<Person>)
-
-    @Transaction
+    @androidx.room.Transaction
     suspend fun insertPartyWithMembers(name: String, members: List<String>): Long {
         val id = insertParty(Party(name = name))
         insertPeople(members.map { Person(partyId = id, name = it) })
@@ -27,9 +24,7 @@ interface AccountDao {
     @Query("SELECT * FROM accounts ORDER BY createdAt DESC")
     fun getAccounts(): Flow<List<Account>>
 
-    @Insert
-    suspend fun insert(account: Account): Long
-
+    @Insert suspend fun insert(account: Account): Long
     @Update suspend fun update(account: Account)
     @Delete suspend fun delete(account: Account)
 }

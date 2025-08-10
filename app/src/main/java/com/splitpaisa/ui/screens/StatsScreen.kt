@@ -2,10 +2,14 @@ package com.splitpaisa.ui.screens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
 
@@ -45,8 +49,8 @@ private fun BarsDemo() {
             drawRoundRect(
                 color = MaterialTheme.colorScheme.primary,
                 topLeft = Offset((barWidth + gap) * i, size.height - v),
-                size = androidx.compose.ui.geometry.Size(barWidth, v),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(12f, 12f)
+                size = Size(barWidth, v),
+                cornerRadius = CornerRadius(12f, 12f)
             )
         }
     }
@@ -63,10 +67,10 @@ private fun HeatDemo() {
                 val x = c * (cell * 1.25f)
                 val y = r * (cell * 1.25f)
                 drawRoundRect(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = (0.3f + (r*cols+c) % 5 / 10f)),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = (0.3f + ((r*cols+c) % 5) / 10f)),
                     topLeft = Offset(x, y),
-                    size = androidx.compose.ui.geometry.Size(cell, cell),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(cell/4, cell/4)
+                    size = Size(cell, cell),
+                    cornerRadius = CornerRadius(cell/4, cell/4)
                 )
             }
         }
