@@ -1,4 +1,4 @@
-name: Android Debug APK
+name: Android Debug APK (auto-generate wrapper)
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-apk:
@@ -29,55 +29,59 @@ jobs:
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v4
 
-      # Find project dir (parent of app/) and wrapper (if present)
-      - name: Detect project & wrapper
+      - name: Detect project root (settings.gradle)
         id: detect
         shell: bash
         run: |
-          set -e
-          APP_GRADLE="$(git ls-files | grep -E '(^|/)(app/build\.gradle(\.kts)?)$' | head -n 1 || true)"
-          if [ -z "$APP_GRADLE" ]; then
-            echo "Could not find app/build.gradle(.kts) anywhere in the repo." >&2
+          set -euo pipefail
+          SETTINGS=$(git ls-files | grep -E '(^|/)(settings\.gradle(\.kts)?)$' | head -n 1 || true)
+          if [ -z "${SETTINGS:-}" ]; then
+            echo "Could not find settings.gradle(.kts) anywhere in the repo." >&2
             exit 1
           fi
-          PROJECT_DIR="$(dirname "$(dirname "$APP_GRADLE")")"
-          echo "Detected project dir: $PROJECT_DIR"
+          PROJECT_DIR="$(dirname "$SETTINGS")"
           echo "project_dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+          echo "Detected project dir: $PROJECT_DIR"
 
-          WRAPPER="$PROJECT_DIR/gradlew"
-          if [ -f "$WRAPPER" ]; then
-            echo "wrapper=$WRAPPER" >> "$GITHUB_OUTPUT"
-            echo "Wrapper found at $WRAPPER"
-          else
-            echo "No wrapper at $WRAPPER"
-          fi
-
-      - name: Make gradlew executable
-        if: steps.detect.outputs.wrapper != ''
-        run: chmod +x "${{ steps.detect.outputs.wrapper }}"
-
-      # If wrapper exists, use it. Otherwise, bootstrap a Gradle distro that matches AGP.
-      - name: Bootstrap Gradle (fallback when no wrapper)
-        if: steps.detect.outputs.wrapper == ''
-        id: bootstrap
+      - name: Ensure Gradle wrapper (generate if missing)
+        id: wrapper_gen
         working-directory: ${{ steps.detect.outputs.project_dir }}
         shell: bash
         run: |
-          set -e
-          # Try to read AGP version
-          AGP="$(grep -Rho 'com\.android\.tools\.build:gradle:[0-9.]*' . | head -n 1 | sed -E 's/.*gradle:([0-9.]+).*/\1/')"
+          set -euo pipefail
+          if [ -f "./gradlew" ]; then
+            echo "Wrapper already exists."
+            echo "wrapper=./gradlew" >> "$GITHUB_OUTPUT"
+            chmod +x ./gradlew
+            exit 0
+          fi
+
+          echo "No wrapper found. Detecting AGP version to pick a compatible Gradle..."
+          # Look for both Groovy and Kotlin DSL plugin declarations and classpath
+          AGP=$(grep -RhoE "com\.android\.tools\.build:gradle:[0-9.]+" . | sed -E 's/.*gradle:([0-9.]+).*/\1/' | head -n 1 || true)
+          if [ -z "${AGP:-}" ]; then
+            AGP=$(grep -RhoE "id\s*\(\s*['\"]com\.android\.(application|library)['\"]\s*\)\s*version\s*['\"][0-9.]+['\"]" . \
+                  | sed -E "s/.*version\s*['\"]([0-9.]+)['\"].*/\1/" | head -n 1 || true)
+          fi
+
           echo "Detected AGP: ${AGP:-unknown}"
 
-          # Heuristic mapping AGP -> Gradle; adjust as needed
+          # Map AGP -> Gradle (conservative mapping)
           GV="8.7"
-          case "$AGP" in
-            8.5*) GV="8.7" ;;
-            8.4*) GV="8.6" ;;
-            8.3*) GV="8.4" ;;
-            8.2*) GV="8.2" ;;
-            8.1*) GV="8.0" ;;
-            8.0*) GV="8.0" ;;
-            7.[6-9]*) GV="7.6.4" ;;
+          case "${AGP:-}" in
+            8.6* ) GV="8.7" ;;
+            8.5* ) GV="8.7" ;;
+            8.4* ) GV="8.6" ;;
+            8.3* ) GV="8.4" ;;
+            8.2* ) GV="8.2" ;;
+            8.1* ) GV="8.0" ;;
+            8.0* ) GV="8.0" ;;
+            7.4* ) GV="7.5.1" ;;
+            7.3* ) GV="7.4.2" ;;
+            7.2* ) GV="7.3.3" ;;
+            7.1* ) GV="7.2" ;;
+            7.0* ) GV="7.0.2" ;;
+            4.2* ) GV="6.7.1" ;;
           esac
           echo "Using Gradle $GV"
 
@@ -86,29 +90,27 @@ jobs:
           curl -sSL "$URL" -o gradle.zip
           unzip -q gradle.zip -d "$RUNNER_TEMP/gradle"
           GRADLE_HOME="$RUNNER_TEMP/gradle/gradle-$GV"
-          echo "gradle_home=$GRADLE_HOME" >> "$GITHUB_OUTPUT"
           "$GRADLE_HOME/bin/gradle" --version
 
-      - name: Assemble Debug APK (via wrapper)
-        if: steps.detect.outputs.wrapper != ''
+          echo "Generating wrapper at $(pwd) with Gradle $GV"
+          "$GRADLE_HOME/bin/gradle" wrapper --gradle-version "$GV"
+          chmod +x ./gradlew
+          echo "wrapper=./gradlew" >> "$GITHUB_OUTPUT"
+
+      - name: Assemble Debug APK
         working-directory: ${{ steps.detect.outputs.project_dir }}
         run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
-
-      - name: Assemble Debug APK (via downloaded Gradle)
-        if: steps.detect.outputs.wrapper == ''
-        working-directory: ${{ steps.detect.outputs.project_dir }}
-        run: ${{ steps.bootstrap.outputs.gradle_home }}/bin/gradle :app:assembleDebug --no-daemon --stacktrace
 
       - name: Prepare artifact
         working-directory: ${{ steps.detect.outputs.project_dir }}
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
           mkdir -p dist
           APK=$(find app/build/outputs/apk/debug -maxdepth 1 -type f -name "*.apk" | head -n 1 || true)
-          if [ -z "$APK" ]; then
+          if [ -z "${APK:-}" ]; then
             echo "Debug APK not found under app/build/outputs/apk/debug." >&2
-            echo "Directory listing:"
+            echo "Directory listing for app/build/outputs:"
             find app/build/outputs -maxdepth 3 -type f -printf "%p\n" || true
             exit 1
           fi
@@ -122,11 +124,3 @@ jobs:
           path: ${{ steps.detect.outputs.project_dir }}/dist/SplitPaisa-${{ github.run_number }}-debug.apk
           compression-level: 0
           retention-days: 7
-
-      - name: Publish APK to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: debug-${{ github.run_id }}
-          name: "SplitPaisa Debug #${{ github.run_number }}"
-          prerelease: true
-          files: ${{ steps.detect.outputs.project_dir }}/dist/SplitPaisa-${{ github.run_number }}-debug.apk
