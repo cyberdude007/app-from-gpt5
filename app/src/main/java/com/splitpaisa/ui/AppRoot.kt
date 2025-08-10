@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.splitpaisa.ui
 
 import androidx.compose.foundation.layout.*
@@ -10,7 +12,6 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun AppRoot() {
-    // ✅ All composable-only APIs live inside a @Composable
     val snackbarHostState = remember { SnackbarHostState() }
     var showAddSplit by remember { mutableStateOf(false) }
     var showCreateParty by remember { mutableStateOf(false) }
