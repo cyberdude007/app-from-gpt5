@@ -25,25 +25,31 @@ abstract class AppDatabase : RoomDatabase() {
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "splitpaisa.db")
                     .fallbackToDestructiveMigration()
-                    .addCallback(object : Callback() {
-                        override fun onCreate(db: SupportSQLiteDatabase) {
-                            super.onCreate(db)
-                            // Seed default data so "Save" works out-of-the-box.
-                            CoroutineScope(Dispatchers.IO).launch {
-                                try {
-                                    // Account
-                                    db.execSQL("INSERT INTO accounts(name,type,openingBalance,createdAt) VALUES ('Cash','Cash',0.0, strftime('%s','now')*1000)")
-                                    // Categories
-                                    val teal = 0xFF2BB39A.toInt() // consistent accent
-                                    db.execSQL("INSERT INTO categories(name,icon,color) VALUES ('Food','\uD83C\uDF54', $teal)")       -- 🍔
-                                    db.execSQL("INSERT INTO categories(name,icon,color) VALUES ('Travel','\u2708\uFE0F', $teal)")   -- ✈️
-                                    db.execSQL("INSERT INTO categories(name,icon,color) VALUES ('Groceries','\uD83D\uDED2', $teal)") -- 🛒
-                                    db.execSQL("INSERT INTO categories(name,icon,color) VALUES ('Utilities','\uD83D\uDCA1', $teal)") -- 💡
-                                    db.execSQL("INSERT INTO categories(name,icon,color) VALUES ('Other','\uD83D\uDCE6', $teal)")     -- 📦
-                                } catch (_: Throwable) { /* best-effort seed */ }
+                        .addCallback(object : Callback() {
+                            override fun onCreate(db: SupportSQLiteDatabase) {
+                                super.onCreate(db)
+                                // Pre-populate on first run so "Save" works out of the box.
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    try {
+                                        // Default account
+                                        db.execSQL(
+                                            "INSERT INTO accounts(name,type,openingBalance,createdAt) " +
+                                            "VALUES ('Cash','Cash',0.0, strftime('%s','now')*1000)"
+                                        )
+
+                                        // Starter categories (teal accent)
+                                        val teal = 0xFF2BB39A.toInt() // ARGB teal as signed Int
+                                        db.execSQL("INSERT INTO categories(name,icon,color) VALUES ('Food','\uD83C\uDF54', $teal)")
+                                        db.execSQL("INSERT INTO categories(name,icon,color) VALUES ('Travel','\u2708\uFE0F', $teal)")
+                                        db.execSQL("INSERT INTO categories(name,icon,color) VALUES ('Groceries','\uD83D\uDED2', $teal)")
+                                        db.execSQL("INSERT INTO categories(name,icon,color) VALUES ('Utilities','\uD83D\uDCA1', $teal)")
+                                        db.execSQL("INSERT INTO categories(name,icon,color) VALUES ('Other','\uD83D\uDCE6', $teal)")
+                                    } catch (_: Throwable) {
+                                        // best-effort seed
+                                    }
+                                }
                             }
-                        }
-                    })
+                        })
                     .build()
                     .also { INSTANCE = it }
             }
