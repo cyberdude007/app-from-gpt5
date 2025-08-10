@@ -11,7 +11,7 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
@@ -29,38 +29,97 @@ jobs:
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v4
 
-      # Find the gradle wrapper anywhere in the repo
-      - name: Locate Gradle wrapper
-        id: gw
+      # Find project dir (parent of app/) and wrapper (if present)
+      - name: Detect project & wrapper
+        id: detect
         shell: bash
         run: |
           set -e
-          WRAPPER="$(git ls-files | grep -E '(^|/)(gradlew)$' | head -n 1 || true)"
-          if [ -z "$WRAPPER" ]; then
-            echo "No gradlew found. Commit gradlew, gradlew.bat and gradle/wrapper/*" >&2
+          APP_GRADLE="$(git ls-files | grep -E '(^|/)(app/build\.gradle(\.kts)?)$' | head -n 1 || true)"
+          if [ -z "$APP_GRADLE" ]; then
+            echo "Could not find app/build.gradle(.kts) anywhere in the repo." >&2
             exit 1
           fi
-          echo "wrapper=$WRAPPER" >> "$GITHUB_OUTPUT"
-          echo "dir=$(dirname "$WRAPPER")" >> "$GITHUB_OUTPUT"
+          PROJECT_DIR="$(dirname "$(dirname "$APP_GRADLE")")"
+          echo "Detected project dir: $PROJECT_DIR"
+          echo "project_dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+
+          WRAPPER="$PROJECT_DIR/gradlew"
+          if [ -f "$WRAPPER" ]; then
+            echo "wrapper=$WRAPPER" >> "$GITHUB_OUTPUT"
+            echo "Wrapper found at $WRAPPER"
+          else
+            echo "No wrapper at $WRAPPER"
+          fi
 
       - name: Make gradlew executable
-        run: chmod +x "${{ steps.gw.outputs.wrapper }}"
+        if: steps.detect.outputs.wrapper != ''
+        run: chmod +x "${{ steps.detect.outputs.wrapper }}"
 
-      - name: Assemble Debug APK
-        working-directory: ${{ steps.gw.outputs.dir }}
+      # If wrapper exists, use it. Otherwise, bootstrap a Gradle distro that matches AGP.
+      - name: Bootstrap Gradle (fallback when no wrapper)
+        if: steps.detect.outputs.wrapper == ''
+        id: bootstrap
+        working-directory: ${{ steps.detect.outputs.project_dir }}
+        shell: bash
+        run: |
+          set -e
+          # Try to read AGP version
+          AGP="$(grep -Rho 'com\.android\.tools\.build:gradle:[0-9.]*' . | head -n 1 | sed -E 's/.*gradle:([0-9.]+).*/\1/')"
+          echo "Detected AGP: ${AGP:-unknown}"
+
+          # Heuristic mapping AGP -> Gradle; adjust as needed
+          GV="8.7"
+          case "$AGP" in
+            8.5*) GV="8.7" ;;
+            8.4*) GV="8.6" ;;
+            8.3*) GV="8.4" ;;
+            8.2*) GV="8.2" ;;
+            8.1*) GV="8.0" ;;
+            8.0*) GV="8.0" ;;
+            7.[6-9]*) GV="7.6.4" ;;
+          esac
+          echo "Using Gradle $GV"
+
+          URL="https://services.gradle.org/distributions/gradle-${GV}-bin.zip"
+          echo "Downloading $URL"
+          curl -sSL "$URL" -o gradle.zip
+          unzip -q gradle.zip -d "$RUNNER_TEMP/gradle"
+          GRADLE_HOME="$RUNNER_TEMP/gradle/gradle-$GV"
+          echo "gradle_home=$GRADLE_HOME" >> "$GITHUB_OUTPUT"
+          "$GRADLE_HOME/bin/gradle" --version
+
+      - name: Assemble Debug APK (via wrapper)
+        if: steps.detect.outputs.wrapper != ''
+        working-directory: ${{ steps.detect.outputs.project_dir }}
         run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
 
+      - name: Assemble Debug APK (via downloaded Gradle)
+        if: steps.detect.outputs.wrapper == ''
+        working-directory: ${{ steps.detect.outputs.project_dir }}
+        run: ${{ steps.bootstrap.outputs.gradle_home }}/bin/gradle :app:assembleDebug --no-daemon --stacktrace
+
       - name: Prepare artifact
-        working-directory: ${{ steps.gw.outputs.dir }}
+        working-directory: ${{ steps.detect.outputs.project_dir }}
+        shell: bash
         run: |
+          set -e
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk "dist/SplitPaisa-${{ github.run_number }}-debug.apk"
+          APK=$(find app/build/outputs/apk/debug -maxdepth 1 -type f -name "*.apk" | head -n 1 || true)
+          if [ -z "$APK" ]; then
+            echo "Debug APK not found under app/build/outputs/apk/debug." >&2
+            echo "Directory listing:"
+            find app/build/outputs -maxdepth 3 -type f -printf "%p\n" || true
+            exit 1
+          fi
+          cp "$APK" "dist/SplitPaisa-${{ github.run_number }}-debug.apk"
+          echo "Copied $APK"
 
       - name: Upload artifact (no compression)
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: ${{ steps.gw.outputs.dir }}/dist/SplitPaisa-${{ github.run_number }}-debug.apk
+          path: ${{ steps.detect.outputs.project_dir }}/dist/SplitPaisa-${{ github.run_number }}-debug.apk
           compression-level: 0
           retention-days: 7
 
@@ -70,4 +129,4 @@ jobs:
           tag_name: debug-${{ github.run_id }}
           name: "SplitPaisa Debug #${{ github.run_number }}"
           prerelease: true
-          files: ${{ steps.gw.outputs.dir }}/dist/SplitPaisa-${{ github.run_number }}-debug.apk
+          files: ${{ steps.detect.outputs.project_dir }}/dist/SplitPaisa-${{ github.run_number }}-debug.apk
