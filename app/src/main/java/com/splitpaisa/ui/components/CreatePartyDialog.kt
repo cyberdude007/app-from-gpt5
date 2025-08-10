@@ -7,14 +7,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.splitpaisa.data.FakeRepository
-import com.splitpaisa.data.Party
+import com.splitpaisa.model.Person
 
 @Composable
 fun CreatePartyDialog(
-    repo: FakeRepository,
+    people: List<Person>,
     onDismiss: () -> Unit,
-    onCreated: (Party) -> Unit
+    onCreated: (name: String, members: List<Person>) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var members by remember { mutableStateOf(emptySet<String>()) }
@@ -24,26 +23,16 @@ fun CreatePartyDialog(
         title = { Text("New Party") },
         text = {
             Column {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Party name") }
-                )
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Party name") })
                 Spacer(Modifier.height(12.dp))
-                PeoplePicker(
-                    repo = repo,
-                    onChange = { members = it }
-                )
+                PeoplePicker(people = people, onChange = { members = it })
             }
         },
         confirmButton = {
-            TextButton(
-                enabled = name.isNotBlank() && members.size >= 2,
-                onClick = {
-                    val p = repo.addParty(name.trim(), members.toList())
-                    onCreated(p)
-                }
-            ) { Text("Create") }
+            TextButton(enabled = name.isNotBlank() && members.size >= 2, onClick = {
+                val selectedPeople = people.filter { members.contains(it.id) }
+                onCreated(name.trim(), selectedPeople)
+            }) { Text("Create") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )

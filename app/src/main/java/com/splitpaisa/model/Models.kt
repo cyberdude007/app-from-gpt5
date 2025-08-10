@@ -1,7 +1,7 @@
-package com.splitpaisa.data
+package com.splitpaisa.model
 
-import java.util.UUID
 import java.time.LocalDate
+import java.util.UUID
 
 data class Person(
     val id: String = UUID.randomUUID().toString(),
@@ -11,7 +11,7 @@ data class Person(
 data class Party(
     val id: String = UUID.randomUUID().toString(),
     val name: String,
-    val memberIds: MutableList<String> = mutableListOf()
+    val memberIds: List<String> = emptyList()
 )
 
 data class Expense(
