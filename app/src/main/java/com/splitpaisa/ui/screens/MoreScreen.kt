@@ -1,7 +1,8 @@
 package com.splitpaisa.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -14,26 +15,39 @@ fun MoreScreen(
     plain: Boolean,
     onPlainChange: (Boolean) -> Unit
 ) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Card(Modifier.weight(1f)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text("Settings", style = MaterialTheme.typography.headlineSmall)
+
+        Card {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Preferences", style = MaterialTheme.typography.titleLarge)
+                Text("Display", style = MaterialTheme.typography.titleMedium)
                 Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                    Column { Text("Simplify debts"); Text("Show netted edges between members", style = MaterialTheme.typography.bodySmall) }
-                    Switch(checked = simplify, onCheckedChange = onSimplifyChange)
-                }
-                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                    Column { Text("Plain mode"); Text("Minimal UI, reduced flourish", style = MaterialTheme.typography.bodySmall) }
+                    Text("Plain mode (reduced animations)")
                     Switch(checked = plain, onCheckedChange = onPlainChange)
                 }
             }
         }
-        Card(Modifier.weight(1f)) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Theme", style = MaterialTheme.typography.titleLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    repeat(3) { Box(Modifier.size(40.dp).background(MaterialTheme.colorScheme.primary, shape = MaterialTheme.shapes.large)) }
+
+        Card {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Debts", style = MaterialTheme.typography.titleMedium)
+                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                    Text("Simplify debts")
+                    Switch(checked = simplify, onCheckedChange = onSimplifyChange)
                 }
+            }
+        }
+
+        Card {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("About", style = MaterialTheme.typography.titleMedium)
+                Text("SplitPaisa • v1.0", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
