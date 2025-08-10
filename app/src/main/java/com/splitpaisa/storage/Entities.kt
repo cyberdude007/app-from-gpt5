@@ -1,31 +1,64 @@
 package com.splitpaisa.storage
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
+import androidx.room.*
 
-@Entity(tableName = "persons")
-data class PersonEntity(
-    @PrimaryKey val id: String,
+@Entity(tableName = "parties")
+data class Party(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(
+    tableName = "people",
+    foreignKeys = [ForeignKey(
+        entity = Party::class,
+        parentColumns = ["id"],
+        childColumns = ["partyId"],
+        onDelete = ForeignKey.CASCADE
+    )],
+    indices = [Index("partyId")]
+)
+data class Person(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val partyId: Long,
     val name: String
 )
 
-@Entity(tableName = "parties")
-data class PartyEntity(
-    @PrimaryKey val id: String,
+@Entity(tableName = "accounts")
+data class Account(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
-    /** Comma-separated personIds */
-    val memberIdsCsv: String
+    val type: String,
+    val openingBalance: Double = 0.0,
+    val createdAt: Long = System.currentTimeMillis()
 )
 
-@Entity(tableName = "expenses")
-data class ExpenseEntity(
-    @PrimaryKey val id: String,
-    val partyId: String,
+@Entity(tableName = "categories")
+data class Category(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val icon: String,
+    val color: Long
+)
+
+@Entity(
+    tableName = "transactions",
+    foreignKeys = [
+        ForeignKey(entity = Account::class, parentColumns = ["id"], childColumns = ["accountId"], onDelete = ForeignKey.CASCADE),
+        ForeignKey(entity = Party::class, parentColumns = ["id"], childColumns = ["partyId"], onDelete = ForeignKey.SET_NULL),
+        ForeignKey(entity = Category::class, parentColumns = ["id"], childColumns = ["categoryId"], onDelete = ForeignKey.SET_NULL)
+    ],
+    indices = [Index("accountId"), Index("partyId"), Index("categoryId")]
+)
+data class Transaction(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val accountId: Long,
+    val partyId: Long?,
+    val categoryId: Long?,
     val amount: Double,
-    val description: String,
-    val payerId: String,
-    /** Comma-separated personIds */
-    val participantIdsCsv: String,
-    /** LocalDate stored as epochDay */
-    val dateEpochDay: Long
+    val note: String = "",
+    val dateUtc: Long = System.currentTimeMillis(),
+    val participantsJson: String? = null,
+    val splitType: String? = null
 )

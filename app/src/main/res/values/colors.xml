@@ -1,8 +1,5 @@
 <resources>
-    <!-- App icon background -->
     <color name="ic_launcher_background">#2BB39A</color>
-
-    <!-- UI palette used by themes.xml or other XML resources -->
     <color name="pf_teal">#2BB39A</color>
     <color name="pf_lime">#B7E041</color>
     <color name="pf_gold">#C89B3C</color>

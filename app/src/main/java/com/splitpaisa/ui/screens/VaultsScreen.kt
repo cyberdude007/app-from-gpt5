@@ -5,26 +5,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.splitpaisa.storage.Account
 
 @Composable
-fun VaultsScreen() {
-    val vaults = listOf("Cash" to 1250, "HDFC" to 8450, "SBI" to 412)
-    val total = vaults.sumOf { it.second }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Card(Modifier.weight(2f)) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Accounts", style = MaterialTheme.typography.titleLarge)
-                vaults.forEach { (name, bal) ->
-                    ListItem(headlineContent = { Text(name) }, trailingContent = { Text("₹$bal") })
-                    Divider()
-                }
-            }
+fun VaultsScreen(
+    accounts: List<Account>,
+    onAddAccount: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Accounts", style = MaterialTheme.typography.headlineMedium)
+            Button(onClick = onAddAccount) { Text("+ Add Account") }
         }
-        Card(Modifier.weight(1f)) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Total", style = MaterialTheme.typography.titleLarge)
-                Text("₹$total", style = MaterialTheme.typography.displaySmall)
-                LinearProgressIndicator(progress = { 0.62f })
+        accounts.forEach { a ->
+            Card {
+                ListItem(
+                    headlineContent = { Text(a.name) },
+                    trailingContent = { Text("₹${"%.0f".format(a.openingBalance)}") }
+                )
             }
         }
     }

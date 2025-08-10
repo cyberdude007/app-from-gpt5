@@ -7,33 +7,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.splitpaisa.model.Expense
-import com.splitpaisa.model.Person
+import com.splitpaisa.storage.Transaction
+import com.splitpaisa.storage.Account
 
 @Composable
 fun HomeScreen(
     onOpenSplit: () -> Unit,
-    recent: List<Expense>,
-    people: List<Person>
+    recent: List<Transaction>,
+    accounts: List<Account>
 ) {
     val sw = LocalConfiguration.current.screenWidthDp
     val isCompact = sw < 600
 
     if (isCompact) {
-        // PHONE: vertical stack
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             QuickActionsCard(compact = true, onOpenSplit = onOpenSplit)
             TodayCard()
-            RecentCard(recent = recent, people = people)
+            RecentCard(recent = recent)
         }
     } else {
-        // TABLET/WIDE: two-column
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Card(Modifier.weight(2f)) { QuickActionsCard(compact = false, onOpenSplit = onOpenSplit) }
                 Card(Modifier.weight(1f)) { TodayCard() }
             }
-            RecentCard(recent = recent, people = people)
+            RecentCard(recent = recent)
         }
     }
 }
@@ -71,7 +69,6 @@ private fun TodayCard() {
     Card {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Today", style = MaterialTheme.typography.titleLarge)
-            Text("Aug 2025")
             Text("Backed up locally")
             Text("Tip: Long-press a party to settle")
         }
@@ -79,16 +76,15 @@ private fun TodayCard() {
 }
 
 @Composable
-private fun RecentCard(recent: List<Expense>, people: List<Person>) {
+private fun RecentCard(recent: List<Transaction>) {
     Card {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Recent activity", style = MaterialTheme.typography.titleLarge)
-            recent.take(10).forEach { e ->
-                val payer = people.firstOrNull { it.id == e.payerId }?.name ?: "Unknown"
+            recent.forEach { e ->
                 ListItem(
-                    headlineContent = { Text(e.description) },
-                    supportingContent = { Text("$payer • split") },
-                    trailingContent = { Text("₹${"%.0f".format(e.amount)}") }
+                    headlineContent = { Text(e.note.ifBlank { "Expense" }) },
+                    supportingContent = { Text("₹${"%.0f".format(e.amount)}") },
+                    trailingContent = { Text("•") }
                 )
                 Divider()
             }
