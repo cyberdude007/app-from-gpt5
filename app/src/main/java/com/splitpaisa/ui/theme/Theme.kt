@@ -4,6 +4,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 val PFTeal = Color(0xFF2BB39A)
 val PFLime = Color(0xFFB7E041)
@@ -21,6 +23,14 @@ private val DarkColors = darkColorScheme(
     tertiary = PFGold
 )
 
+private val SplitShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(18.dp),
+    large = RoundedCornerShape(22.dp),
+    extraLarge = RoundedCornerShape(28.dp)
+)
+
 @Composable
 fun SplitPaisaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -28,6 +38,7 @@ fun SplitPaisaTheme(
 ) {
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
+        shapes = SplitShapes,
         typography = Typography(),
         content = content
     )
