@@ -5,30 +5,33 @@
 
 package com.splitpaisa.ui
 
-import android.app.Application
+import android.app Application
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.splitpaisa.data.Repository
 import com.splitpaisa.di.ServiceLocator
 import com.splitpaisa.settings.SettingsStore
+import com.splitpaisa.storage.Account
 import com.splitpaisa.storage.Transaction
 import com.splitpaisa.ui.components.BottomBar
 import com.splitpaisa.ui.components.StatusCapsule
 import com.splitpaisa.ui.screens.*
 import com.splitpaisa.ui.sheets.*
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.saveable.rememberSaveable
 
 @Composable
 fun AppRoot(
@@ -46,6 +49,10 @@ fun AppRoot(
     val recent by repo.recentTransactions().collectAsState(initial = emptyList())
     val accounts by repo.accounts().collectAsState(initial = emptyList())
     val parties by repo.parties().collectAsState(initial = emptyList())
+    val categories by repo.categories().collectAsState(initial = emptyList())
+
+    var copyPrefillAmount by rememberSaveable { mutableStateOf<Double?>(null) }
+    var copyPrefillNote by rememberSaveable { mutableStateOf("") }
 
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
@@ -57,9 +64,6 @@ fun AppRoot(
     var showTxDetail by remember { mutableStateOf(false) }
     var showTxEdit by remember { mutableStateOf(false) }
     var selectedTx by remember { mutableStateOf<Transaction?>(null) }
-    var copyPrefillAmount by rememberSaveable { mutableStateOf<Double?>(null) }
-    var copyPrefillNote by rememberSaveable { mutableStateOf("") }
-
 
     val isCompact = widthSizeClass == WindowWidthSizeClass.Compact
 
@@ -111,14 +115,52 @@ fun AppRoot(
                         onTransactionClick = { tx ->
                             selectedTx = tx
                             showTxDetail = true
-                        }
+                        },
+                        onOpenCategories = { nav.navigate("categories") }
                     )
                 }
                 composable(Tab.Party.route) {
                     PartyScreen(parties = parties, onCreateParty = { showAddParty = true })
                 }
                 composable(Tab.Vaults.route) {
-                    VaultsScreen(accounts = accounts, onAddAccount = { showAddAccount = true })
+                    VaultsScreen(
+                        accounts = accounts,
+                        onAddAccount = { showAddAccount = true },
+                        onAccountClick = { acc -> nav.navigate("account/${acc.id}") }
+                    )
+                }
+                composable("account/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { back ->
+                    val id = back.arguments?.getLong("id") ?: return@composable
+                    val acc: Account? = accounts.firstOrNull { it.id == id }
+                    val txs = remember(id, recent) { recent.filter { it.accountId == id } }
+                    if (acc != null) {
+                        AccountDetailScreen(account = acc, transactions = txs)
+                    } else {
+                        Text("Account not found", modifier = Modifier.padding(16.dp))
+                    }
+                }
+                composable("categories") {
+                    CategoriesScreen(
+                        categories = categories,
+                        onAdd = { name, icon, color -> scope.launch { repo.addCategory(name, icon, color) } },
+                        onUpdate = { cat -> scope.launch { 
+                            try { 
+                                repo.updateCategory(cat) 
+                            } catch (t: Throwable) { /* add method in repo if missing */ }
+                        } },
+                        onDelete = { cat ->
+                            val used = recent.any { it.categoryId == cat.id }
+                            if (used) {
+                                Toast.makeText(ctx, "Cannot delete: category in use", Toast.LENGTH_SHORT).show()
+                            } else {
+                                scope.launch { 
+                                    try { 
+                                        repo.deleteCategory(cat) 
+                                    } catch (t: Throwable) { /* add method in repo if missing */ }
+                                }
+                            }
+                        }
+                    )
                 }
                 composable(Tab.Stats.route) {
                     StatsScreen()
@@ -173,7 +215,6 @@ fun AppRoot(
             initialNote = copyPrefillNote
         )
     }
-
 
     if (showTxDetail && selectedTx != null) {
         TransactionDetailSheet(

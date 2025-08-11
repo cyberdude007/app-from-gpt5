@@ -1,5 +1,6 @@
 package com.splitpaisa.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -10,19 +11,29 @@ import com.splitpaisa.storage.Account
 @Composable
 fun VaultsScreen(
     accounts: List<Account>,
-    onAddAccount: () -> Unit
+    onAddAccount: () -> Unit,
+    onAccountClick: (Account) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Accounts", style = MaterialTheme.typography.headlineMedium)
-            Button(onClick = onAddAccount) { Text("+ Add Account") }
+            Text("Accounts", style = MaterialTheme.typography.titleLarge)
+            FilledTonalButton(onClick = onAddAccount) { Text("Add") }
         }
-        accounts.forEach { a ->
-            Card {
-                ListItem(
-                    headlineContent = { Text(a.name) },
-                    trailingContent = { Text("₹${"%.0f".format(a.openingBalance)}") }
-                )
+
+        if (accounts.isEmpty()) {
+            Text("No accounts yet", style = MaterialTheme.typography.bodyMedium)
+        } else {
+            accounts.forEach { acc ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onAccountClick(acc) }
+                ) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text(acc.name, style = MaterialTheme.typography.titleMedium)
+                        Text("Type: ${acc.type}", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
             }
         }
     }

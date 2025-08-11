@@ -15,7 +15,8 @@ fun HomeScreen(
     onOpenSplit: () -> Unit,
     recent: List<Transaction>,
     accounts: List<Account>,
-    onTransactionClick: (Transaction) -> Unit
+    onTransactionClick: (Transaction) -> Unit,
+    onOpenCategories: () -> Unit
 ) {
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (isCompact) {
@@ -23,14 +24,14 @@ fun HomeScreen(
                 Button(onClick = onOpenSplit, modifier = Modifier.fillMaxWidth()) { Text("₹ New Expense") }
                 OutlinedButton(onClick = {}, modifier = Modifier.fillMaxWidth()) { Text("Add Split") }
                 OutlinedButton(onClick = {}, modifier = Modifier.fillMaxWidth()) { Text("Create Party") }
-                OutlinedButton(onClick = {}, modifier = Modifier.fillMaxWidth()) { Text("Categories") }
+                OutlinedButton(onClick = onOpenCategories, modifier = Modifier.fillMaxWidth()) { Text("Categories") }
             }
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 Button(onClick = onOpenSplit, modifier = Modifier.weight(1f)) { Text("₹ New Expense") }
                 OutlinedButton(onClick = {}, modifier = Modifier.weight(1f)) { Text("Add Split") }
                 OutlinedButton(onClick = {}, modifier = Modifier.weight(1f)) { Text("Create Party") }
-                OutlinedButton(onClick = {}, modifier = Modifier.weight(1f)) { Text("Categories") }
+                OutlinedButton(onClick = onOpenCategories, modifier = Modifier.weight(1f)) { Text("Categories") }
             }
         }
 
