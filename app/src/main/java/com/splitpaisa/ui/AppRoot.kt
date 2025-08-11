@@ -1,8 +1,3 @@
-@file:OptIn(
-    androidx.compose.material3.ExperimentalMaterial3Api::class,
-    androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi::class
-)
-
 package com.splitpaisa.ui
 
 import android.app Application
@@ -32,6 +27,11 @@ import com.splitpaisa.ui.components.StatusCapsule
 import com.splitpaisa.ui.screens.*
 import com.splitpaisa.ui.sheets.*
 import kotlinx.coroutines.launch
+
+@OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi::class
+)
 
 @Composable
 fun AppRoot(
