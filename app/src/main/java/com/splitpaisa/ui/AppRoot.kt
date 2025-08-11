@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi::class)
+
 package com.splitpaisa.ui
 
 import android.app.Application
@@ -34,8 +36,9 @@ fun AppRoot(
     val settings = remember { SettingsStore(app) }
     val scope = rememberCoroutineScope()
 
-    val plain by settings.readPlainMode().collectAsState(initial = false)
-    val simplify by settings.readSimplify().collectAsState(initial = false)
+    // Use the flows exposed by your wrapper: plainMode & simplify
+    val plain by settings.plainMode.collectAsState(initial = false)
+    val simplify by settings.simplify.collectAsState(initial = false)
 
     val recent by repo.recentTransactions().collectAsState(initial = emptyList())
     val accounts by repo.accounts().collectAsState(initial = emptyList())
