@@ -1,4 +1,5 @@
 package com.splitpaisa.ui
+
 import android.app.Application
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -31,7 +32,6 @@ import kotlinx.coroutines.launch
     androidx.compose.material3.ExperimentalMaterial3Api::class,
     androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi::class
 )
-
 @Composable
 fun AppRoot(
     widthSizeClass: WindowWidthSizeClass = WindowWidthSizeClass.Compact
@@ -141,24 +141,23 @@ fun AppRoot(
                 composable("categories") {
                     CategoriesScreen(
                         categories = categories,
-                        onAdd = { name, icon, color -> scope.launch { repo.addCategory(name, icon, color) } },
-                        onUpdate = { cat -> scope.launch { 
-                            try { 
-                                repo.updateCategory(cat) 
-                            } catch (t: Throwable) { /* add method in repo if missing */ }
+                        onAdd = { name, icon, color -> scope.launch {
+                            try { repo.addCategory(name, icon, color) }
+                            catch (_: Throwable) { Toast.makeText(ctx, "Add category not implemented in repo", Toast.LENGTH_SHORT).show() }
                         } },
-                        onDelete = { cat ->
+                        onUpdate = { cat -> scope.launch {
+                            try { repo.updateCategory(cat) }
+                            catch (_: Throwable) { Toast.makeText(ctx, "Update category not implemented in repo", Toast.LENGTH_SHORT).show() }
+                        } },
+                        onDelete = { cat -> scope.launch {
                             val used = recent.any { it.categoryId == cat.id }
                             if (used) {
                                 Toast.makeText(ctx, "Cannot delete: category in use", Toast.LENGTH_SHORT).show()
                             } else {
-                                scope.launch { 
-                                    try { 
-                                        repo.deleteCategory(cat) 
-                                    } catch (t: Throwable) { /* add method in repo if missing */ }
-                                }
+                                try { repo.deleteCategory(cat) }
+                                catch (_: Throwable) { Toast.makeText(ctx, "Delete category not implemented in repo", Toast.LENGTH_SHORT).show() }
                             }
-                        }
+                        } }
                     )
                 }
                 composable(Tab.Stats.route) {
