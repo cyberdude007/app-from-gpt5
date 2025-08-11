@@ -56,6 +56,9 @@ fun AppRoot(
     var showTxDetail by remember { mutableStateOf(false) }
     var showTxEdit by remember { mutableStateOf(false) }
     var selectedTx by remember { mutableStateOf<Transaction?>(null) }
+    var copyPrefillAmount by rememberSaveable { mutableStateOf<Double?>(null) }
+    var copyPrefillNote by rememberSaveable { mutableStateOf("") }
+
 
     val isCompact = widthSizeClass == WindowWidthSizeClass.Compact
 
@@ -145,7 +148,11 @@ fun AppRoot(
 
     if (showAddTx) {
         AddTransactionSheet(
-            onDismiss = { showAddTx = false },
+            onDismiss = {
+                showAddTx = false
+                copyPrefillAmount = null
+                copyPrefillNote = ""
+            },
             onCreate = { amt, note ->
                 val maybeAcc = accounts.firstOrNull()?.id
                 if (maybeAcc == null) {
@@ -156,11 +163,16 @@ fun AppRoot(
                     scope.launch {
                         repo.addTransaction(maybeAcc, null, null, amt, note)
                         showAddTx = false
+                        copyPrefillAmount = null
+                        copyPrefillNote = ""
                     }
                 }
-            }
+            },
+            initialAmount = copyPrefillAmount,
+            initialNote = copyPrefillNote
         )
     }
+
 
     if (showTxDetail && selectedTx != null) {
         TransactionDetailSheet(
@@ -168,10 +180,10 @@ fun AppRoot(
             onDismiss = { showTxDetail = false },
             onEdit = { tx -> showTxDetail = false; selectedTx = tx; showTxEdit = true },
             onCopy = { tx ->
-                scope.launch {
-                    repo.addTransaction(tx.accountId, tx.partyId, tx.categoryId, tx.amount, tx.note)
-                    showTxDetail = false
-                }
+                showTxDetail = false
+                copyPrefillAmount = tx.amount
+                copyPrefillNote = tx.note
+                showAddTx = true
             },
             onDelete = { tx ->
                 scope.launch {
