@@ -10,6 +10,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
+        testInstrumentationRunner = \"androidx.test.runner.AndroidJUnitRunner\"
         applicationId = "com.splitpaisa"
         minSdk = 24
         targetSdk = 35
@@ -66,4 +67,17 @@ dependencies {
 
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.core:core-ktx:1.13.1")
+
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test:core:1.5.0")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2025.07.00"))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+}
+
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.generateKotlin", "true")
 }
