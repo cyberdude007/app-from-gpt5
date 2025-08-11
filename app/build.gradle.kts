@@ -10,7 +10,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        testInstrumentationRunner = \"androidx.test.runner.AndroidJUnitRunner\"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         applicationId = "com.splitpaisa"
         minSdk = 24
         targetSdk = 35
@@ -37,7 +37,8 @@ android {
         compose = true
         buildConfig = true
     }
-
+    
+    sourceSets["androidTest"].assets.srcDir("$projectDir/schemas")
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
 }
 
