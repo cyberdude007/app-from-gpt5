@@ -7,7 +7,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import android.widget.Toast
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -117,18 +116,8 @@ fun AppRoot() {
 
     if (showAddTx) {
         AddTransactionSheet(onDismiss = { showAddTx = false }, onCreate = { amt, note ->
-            val ctx = LocalContext.current
-            val firstAcc = accounts.firstOrNull()
-            if (firstAcc == null) {
-                Toast.makeText(ctx, "Please create an account first.", Toast.LENGTH_SHORT).show()
-                showAddTx = false
-                showAddAccount = true
-            } else {
-                scope.launch {
-                    repo.addTransaction(firstAcc.id, null, null, amt, note)
-                    showAddTx = false
-                }
-            }
+            val acc = accounts.firstOrNull()?.id ?: return@AddTransactionSheet
+            scope.launch { repo.addTransaction(acc, null, null, amt, note); showAddTx = false }
         })
     }
 }
