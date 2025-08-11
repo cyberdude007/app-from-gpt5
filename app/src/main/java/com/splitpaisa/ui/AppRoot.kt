@@ -4,6 +4,7 @@ import android.app.Application
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,7 +23,6 @@ import com.splitpaisa.ui.components.StatusCapsule
 import com.splitpaisa.ui.screens.*
 import com.splitpaisa.ui.sheets.*
 import kotlinx.coroutines.launch
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 
 @Composable
 fun AppRoot(
@@ -43,27 +43,27 @@ fun AppRoot(
 
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
-    val currentRoute = backStack?.destination?.route ?: Tab.Home.name
+    val currentRoute = backStack?.destination?.route ?: Tab.Home.route
 
     var showAddTx by remember { mutableStateOf(false) }
     var showAddParty by remember { mutableStateOf(false) }
     var showAddAccount by remember { mutableStateOf(false) }
     var showTxDetail by remember { mutableStateOf(false) }
     var showTxEdit by remember { mutableStateOf(false) }
-    var selectedTx by remember { mutableStateOf<com.splitpaisa.storage.Transaction?>(null) }
+    var selectedTx by remember { mutableStateOf<Transaction?>(null) }
 
     val isCompact = widthSizeClass == WindowWidthSizeClass.Compact
 
     Scaffold(
         topBar = {
-            SmallTopAppBar(
+            TopAppBar(
                 title = { Text("SplitPaisa") },
                 actions = {
                     if (!isCompact) {
                         StatusCapsule(
                             streak = 7, xp = 245,
                             plainMode = plain,
-                            onPlainModeChange = { scope.launch { settings.setPlainMode(it) } }
+                            onPlainModeChange = { on -> scope.launch { settings.setPlainMode(on) } }
                         )
                     }
                 }
@@ -71,7 +71,9 @@ fun AppRoot(
         },
         bottomBar = {
             if (isCompact) {
-                BottomBar(current = currentRoute, onSelect = { route -> nav.navigate(route) })
+                BottomBar(current = currentRoute) { route ->
+                    if (route != currentRoute) nav.navigate(route)
+                }
             }
         }
     ) { padding ->
@@ -84,14 +86,14 @@ fun AppRoot(
                     StatusCapsule(
                         streak = 7, xp = 245,
                         plainMode = plain,
-                        onPlainModeChange = { scope.launch { settings.setPlainMode(it) } }
+                        onPlainModeChange = { on -> scope.launch { settings.setPlainMode(on) } }
                     )
                 }
                 Divider()
             }
 
-            NavHost(navController = nav, startDestination = Tab.Home.name, modifier = Modifier.fillMaxSize()) {
-                composable(Tab.Home.name) {
+            NavHost(navController = nav, startDestination = Tab.Home.route, modifier = Modifier.fillMaxSize()) {
+                composable(Tab.Home.route) {
                     HomeScreen(
                         isCompact = isCompact,
                         onOpenSplit = { showAddTx = true },
@@ -103,21 +105,21 @@ fun AppRoot(
                         }
                     )
                 }
-                composable(Tab.Party.name) {
+                composable(Tab.Party.route) {
                     PartyScreen(parties = parties, onCreateParty = { showAddParty = true })
                 }
-                composable(Tab.Vaults.name) {
+                composable(Tab.Vaults.route) {
                     VaultsScreen(accounts = accounts, onAddAccount = { showAddAccount = true })
                 }
-                composable(Tab.Stats.name) {
+                composable(Tab.Stats.route) {
                     StatsScreen()
                 }
-                composable(Tab.More.name) {
+                composable(Tab.More.route) {
                     MoreScreen(
                         simplify = simplify,
-                        onSimplifyChange = { scope.launch { settings.setSimplify(it) } },
+                        onSimplifyChange = { on -> scope.launch { settings.setSimplify(on) } },
                         plain = plain,
-                        onPlainChange = { scope.launch { settings.setPlainMode(it) } }
+                        onPlainChange = { on -> scope.launch { settings.setPlainMode(on) } }
                     )
                 }
             }
