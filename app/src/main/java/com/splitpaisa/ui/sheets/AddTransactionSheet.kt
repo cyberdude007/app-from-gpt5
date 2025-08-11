@@ -1,4 +1,3 @@
-// AddTransactionSheet.kt
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.splitpaisa.ui.sheets
@@ -7,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -27,7 +27,9 @@ fun AddTransactionSheet(
 
             OutlinedTextField(
                 value = amount,
-                onValueChange = { input -> amount = input.filter { it.isDigit() || it == '.' } },
+                onValueChange = { input: String ->
+                    amount = input.filter { ch: Char -> ch.isDigit() || ch == '.' }
+                },
                 label = { Text("Amount") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
