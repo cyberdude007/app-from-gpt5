@@ -37,7 +37,7 @@ android {
         compose = true
         buildConfig = true
     }
-    
+
     sourceSets["androidTest"].assets.srcDir("$projectDir/schemas")
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
 }
@@ -55,7 +55,8 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.navigation:navigation-compose:2.8.7")
     implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.compose.ui:ui-text")   
+    implementation("androidx.compose.ui:ui-text")
+    implementation("androidx.compose.material3:material3-window-size-class")
 
 
     implementation("androidx.room:room-runtime:2.6.1")

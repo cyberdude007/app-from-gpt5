@@ -15,6 +15,7 @@ interface Repository {
 
     fun recentTransactions(limit: Int = 20): Flow<List<Transaction>>
     suspend fun addTransaction(accountId: Long, partyId: Long?, categoryId: Long?, amount: Double, note: String): Long
+    suspend fun updateTransaction(tx: Transaction)
     suspend fun deleteTransaction(tx: Transaction)
 }
 
@@ -35,5 +36,6 @@ class DefaultRepository(private val db: AppDatabase) : Repository {
     override suspend fun addTransaction(accountId: Long, partyId: Long?, categoryId: Long?, amount: Double, note: String) =
         db.transactionDao().insert(Transaction(accountId = accountId, partyId = partyId, categoryId = categoryId, amount = amount, note = note))
 
+    override suspend fun updateTransaction(tx: Transaction) = db.transactionDao().update(tx)
     override suspend fun deleteTransaction(tx: Transaction) = db.transactionDao().delete(tx)
 }
