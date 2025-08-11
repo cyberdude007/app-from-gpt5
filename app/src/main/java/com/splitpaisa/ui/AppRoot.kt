@@ -1,6 +1,5 @@
 package com.splitpaisa.ui
-
-import android.app Application
+import android.app.Application
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
